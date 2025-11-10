@@ -4,7 +4,7 @@ import pickle
 import struct
 import time
 
-HOST = '127.0.0.1'
+HOST = '77.47.196.66'
 PORT = 7878
 N_clients = 2
 
@@ -25,6 +25,9 @@ def client_handler(client_socket, addr):
 
         if data:
             print(f"{addr} Received {data.decode('utf-8')}")
+
+        while True:
+            time.sleep(1)
 
     except ConnectionResetError:
         print(f"{addr} disconnected")
@@ -69,6 +72,9 @@ def main():
             thread.start()
 
             client_threads.append(thread)
+
+            while True:
+                time.sleep(1)
     
     except KeyboardInterrupt:
         print("Server is down")

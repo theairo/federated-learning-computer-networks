@@ -3,7 +3,7 @@ import pickle
 import struct
 import time
 
-HOST = '127.0.0.1'
+HOST = '77.47.196.66'
 PORT = 7878
 
 def main():
@@ -26,6 +26,9 @@ def main():
 
         if data:
             print(f"Client Received {data.decode('utf-8')}")
+
+        while True:
+            time.sleep(1)
 
     except KeyboardInterrupt:
         print(f"Client shutting down")
