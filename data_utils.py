@@ -6,7 +6,7 @@ from torchvision.datasets import mnist
 # Returns list of torch.data.utils.Subset with data for each client + validation set (the last element in the list)
 def get_partitions_test(N_clients):
     # Load mnist
-    mnist_data=torchvision.datasets.MNIST('./data',download=True)
+    mnist_data=torchvision.datasets.MNIST('./data',download=True,transform=torchvision.transforms.ToTensor())
 
     # Calculate the size of the training and validation sets
     len_mnist=len(mnist_data)
