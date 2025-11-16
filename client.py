@@ -1,11 +1,13 @@
 import socket
-import pickle
-import struct
-import time
+import threading
 from fl_utils import train_local
+from network_utils import send_data, receive_data
+import traceback
 
-HOST = '77.47.196.66'
+HOST = '127.0.0.1'
 PORT = 7878
+
+lock = threading.Lock()
 
 def main():
     # Training parameters
@@ -27,21 +29,19 @@ def main():
         print(f"Exception {e}")
         return
     try:
-        # Receiving training data
-        print("Receiving training data")
-        training_data_length = struct.unpack("Q", client_socket.recv(8))[0]
-        print("Received data length")
-        training_data = pickle.loads(client_socket.recv(training_data_length))
-        print("Received training data")
+
+        training_data = receive_data(client_socket)
+
+        if training_data == None:
+            print("Error. Training data is None.")
 
         # Communication loop
         for round in range(num_rounds):
             print(f"Round {round + 1}")
             # Receiving model
             print("Receiving the model")
-            model_length = struct.unpack("Q", client_socket.recv(8))[0]
-            model_bytes = client_socket.recv(model_length)
-            model = pickle.loads(model_bytes)
+            model = receive_data(client_socket)
+
             print("Model received")
 
             print("Training...")
@@ -50,16 +50,14 @@ def main():
             print("Training complete")
 
             # Sending the model
-            serialized_model = pickle.dumps(model)
-            model_length = struct.pack("Q", len(serialized_model))
-            client_socket.sendall(model_length)
-            client_socket.sendall(serialized_model)
+            send_data(client_socket, model.state_dict(), lock)
             print("Model send")
 
     except KeyboardInterrupt:
         print(f"Client shutting down")
     except Exception as e:
-        print(f"Client Error")
+        print(f"[FATAL ERROR] An unexpected error occurred: {type(e).__name__} - {e}")
+        traceback.print_exc() # Prints error (VERY COOL THING!!)
     finally:
         client_socket.close()
 
