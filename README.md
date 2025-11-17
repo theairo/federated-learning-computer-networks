@@ -1,6 +1,6 @@
-Federated Learning for Computer Networks Simulation
+## Federated Learning for Computer Networks Simulation
 
-Project Description
+# Project Description
 
 This project is a Python-based simulation of a Federated Learning (FL) environment. Instead of a central server collecting all data (which creates privacy risks), this simulation models a system where multiple clients (e.g., devices or hospitals) train a model on their local data.
 
@@ -16,7 +16,7 @@ Privacy-Preserving Aggregation: Implementing a central server that aggregates mo
 
 This project was built to explore privacy-preserving AI and the practical challenges of training models in a distributed network.
 
-Technologies Used
+# Technologies Used
 
 Python
 
@@ -24,7 +24,7 @@ PyTorch: For building, training, and updating the neural network models on both 
 
 NumPy: For numerical operations and data handling.
 
-How to Run
+# How to Run
 
 Clone the repository:
 
