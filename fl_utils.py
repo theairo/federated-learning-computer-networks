@@ -42,12 +42,29 @@ def train_local(model,data,numEpochs,learningRate):
             loss.backward()
             optimizer.step()
 
-# Testing results using torchmetrics.Accuracy
+# Evaluates global model performance in batches. Runs after each training round.
 def test_global(model,test_data):
-    test_loader=torch.utils.data.DataLoader(test_data,shuffle=True)
-    accuracy=torchmetrics.Accuracy(task='multiclass',num_classes=10)
-    for image, label in test_loader:
-        pred=model(image)
-        accuracy.update(pred,label)
-    final_accuracy=accuracy.compute()
-    return final_accuracy.item()
+    batch_size = 128
+    test_loader = torch.utils.data.DataLoader(test_data,batch_size=batch_size,shuffle=False)
+    total_loss = 0 # total loss computed sum of loss * batch size for each batch
+    correct = 0 # number of correct predicted samples
+    total_samples = 0
+    lossFun = nn.CrossEntropyLoss()
+
+    # Starting batch testing
+    model.eval()
+    with torch.no_grad():
+        for X, y in test_loader:
+            yHat = model(X)
+            loss = lossFun(yHat, y)
+            total_loss += loss.item() * X.size(0)
+            predicted = yHat.argmax(1)
+            total_samples += y.size(0)
+            correct += (predicted == y).sum().item()
+
+    # Compute average loss (loss per sample)
+    avg_loss = total_loss / total_samples
+
+    # Compute accuracy in %
+    accuracy = 100 * correct / total_samples
+    return avg_loss, accuracy
