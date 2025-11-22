@@ -2,7 +2,7 @@ import socket
 import threading
 from fl_utils import train_local
 from network_utils import send_data, receive_data
-import traceback
+from model import mnistNet
 
 HOST = '127.0.0.1'
 PORT = 7878
@@ -13,7 +13,9 @@ def main():
     # Training parameters
     num_epochs = 5
     learning_rate = 0.1
-    num_rounds = 10
+
+    # Model
+    model = mnistNet()
 
     # Creating client socket
     client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -39,9 +41,9 @@ def main():
         for round in range(num_rounds):
             print(f"Round {round + 1}")
             # Receiving model
-            print("Receiving the model")
-            model = receive_data(client_socket)
-
+            print("Waiting to receive the model")
+            model_dict = receive_data(client_socket)
+            model.load_state_dict(model_dict)
             print("Model received")
 
             print("Training...")
