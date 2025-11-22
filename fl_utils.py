@@ -1,29 +1,28 @@
+# Import python libraries
 import torch
 import torch.nn as nn
 import torchmetrics
-
 from collections import OrderedDict
 
+# Average weights from clients
 def federated_average(list_of_state_dicts):
 
     if not list_of_state_dicts:
         return None
     
     keys = list_of_state_dicts[0].keys()
-
     avg_state_dict = OrderedDict()
 
     for key in keys:
         layer_tensors = torch.stack([sd[key] for sd in list_of_state_dicts])
-
         layer_avg = torch.mean(layer_tensors, dim=0)
-
         avg_state_dict[key] = layer_avg
 
     return avg_state_dict
 
 # Local training of the model using mini-batches
 def train_local(model,data,numEpochs,learningRate):
+
     # Define tain loader, loss function and optimizer
     train_loader=torch.utils.data.DataLoader(data,batch_size=64,shuffle=True)
     lossFun=nn.CrossEntropyLoss()
@@ -34,6 +33,7 @@ def train_local(model,data,numEpochs,learningRate):
         for images, labels in train_loader:
             # Forward step
             pred=model(images)
+
             # Compute loss
             loss=lossFun(pred,labels)
 
