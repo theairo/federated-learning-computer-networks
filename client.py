@@ -50,8 +50,7 @@ def main():
 
         # Checking whether training data is not empty
         if training_data is None:
-            print("Error. Training data is None.")
-            return
+            raise ValueError(f"[FATAL ERROR] Thread {threading.current_thread().name} received no training data")
 
         # Communication loop
         for round in range(num_rounds):
