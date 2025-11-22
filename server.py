@@ -115,37 +115,13 @@ def main():
             start_event.clear()
             avg_state_dict = federated_average(list_of_state_dicts)
             model_global.load_state_dict(avg_state_dict)
-            
-            TEST_BATCH_SIZE = 128
-            test_loader = DataLoader(
-                test_data, 
-                batch_size=TEST_BATCH_SIZE, 
-                shuffle=False 
-            )
 
-            total_loss = 0
-            correct = 0
-            total_samples = 0
+            # Compute loss per sample and accuracy
+            avg_loss, accuracy=test_global(model_global,test_data)
 
-            for X, y in test_loader:
-                
-                model_global.eval() 
-                with torch.no_grad():
-                    yHat = model_global(X) 
-                    loss = lossFun(yHat, y)
-                    
-                total_loss += loss.item() * X.size(0)
+            # Print results: loss and accuracy
+            print(f"Average Test Loss: {avg_loss:.4f} | Accuracy: {accuracy:.2f}%")
 
-                _, predicted = torch.max(yHat.data, 1)
-                total_samples += y.size(0)
-                correct += (predicted == y).sum().item()
-
-            avg_loss = total_loss / total_samples
-
-            accuracy = 100 * correct / total_samples
-
-            print(f"Round {round + 1} - Average Test Loss: {avg_loss:.4f} | Accuracy: {accuracy:.2f}%")
-            
             end_event.set()
 
     except Exception as e:
