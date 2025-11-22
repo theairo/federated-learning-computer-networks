@@ -9,10 +9,7 @@ import torch.nn as nn
 from data_utils import get_partitions
 from fl_utils import federated_average,test_global
 from network_utils import receive_data, send_data
-import model
-import torch
-from torch.utils.data import DataLoader
-import torch.nn as nn
+from model import mnistNet
 
 # Network configuration
 HOST = '127.0.0.1'  # Bind to all interfaces
