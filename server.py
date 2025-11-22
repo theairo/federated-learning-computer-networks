@@ -28,6 +28,9 @@ model_global = mnistNet()
 # Handles communication with a single client for the duration of training
 def client_handler(client_socket, addr, training_data, model_dict):
     try:
+        # Sending number of rounds
+        send_data(client_socket, num_rounds, lock)
+
         # Sending the training data to clients
         send_data(client_socket, training_data, lock)
 

@@ -11,7 +11,6 @@ from model import mnistNet
 # Network configuration
 HOST = '127.0.0.1'
 PORT = 7878
-num_rounds = 3 # Must be the same in server and client
 
 # Synchronisation primitives
 lock = threading.Lock()
@@ -43,6 +42,9 @@ def main():
         return
 
     try:
+        # Receiving number of rounds
+        num_rounds = receive_data(client_socket)
+        print(f"Number of rounds: {num_rounds}")
 
         training_data = receive_data(client_socket)
 
