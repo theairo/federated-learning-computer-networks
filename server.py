@@ -66,7 +66,7 @@ def main():
         return
 
     # Get data for training and test
-    partitions = data_utils.get_partitions_test(N_clients)
+    partitions = get_partitions(N_clients)
     test_data = partitions[-1]
 
     print(test_data)
