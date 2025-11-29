@@ -4,6 +4,7 @@ import threading
 import time
 import torch
 import torch.nn as nn
+import ssl
 
 # Import from custom files
 from data_utils import get_partitions
@@ -26,8 +27,11 @@ list_of_state_dicts = []
 model_global = mnistNet()
 
 # Handles communication with a single client for the duration of training
-def client_handler(client_socket, addr, training_data, model_dict):
+def client_handler(client_socket, addr, training_data, model_dict, context):
     try:
+        # Secure connection
+        client_socket = context.wrap_socket(client_socket, server_side=True)
+
         # Sending number of rounds
         send_data(client_socket, num_rounds, lock)
 
@@ -57,6 +61,13 @@ def client_handler(client_socket, addr, training_data, model_dict):
     except ConnectionResetError:
         print(f"{addr} disconnected")
 
+    # SSL error
+    except ssl.SSLError as e:
+        print(f"SSL Error: {e}")
+        server_socket.close()
+        print("Server shut down due to the error")
+        return
+
     # Other issues
     except Exception as e:
         print(f"{addr} Error")
@@ -70,6 +81,10 @@ def main():
     # Creating server socket and allow to reuse port immediately
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+
+    # Security
+    context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+    context.load_cert_chain(certfile='cert.pem',keyfile='key.pem')
 
     # Binding
     try:
@@ -98,7 +113,7 @@ def main():
 
             # Creating and running a new thread
             thread = threading.Thread(target=client_handler,
-                                      args=(client_sock, addr, partitions[client_sockets], model_global.state_dict()))
+                                      args=(client_sock, addr, partitions[client_sockets], model_global.state_dict(), context))
             thread.start()
             client_sockets += 1
 

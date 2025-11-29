@@ -2,6 +2,7 @@
 import socket
 import threading
 import traceback
+import ssl
 
 # Import from custom files
 from fl_utils import train_local
@@ -23,8 +24,13 @@ def main():
     # Model
     model = mnistNet()
 
+    # Security
+    context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+    context.load_verify_locations('cert.pem')
+
     # Creating client socket
     client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    client_socket = context.wrap_socket(client_socket, server_hostname='server_name')
 
     # Connecting to the server
     try:
