@@ -6,6 +6,7 @@ import torch
 import torch.nn as nn
 import ssl
 import traceback
+import select
 
 # Import from custom files
 from data_utils import get_partitions
@@ -14,7 +15,7 @@ from network_utils import receive_data, send_data
 from model import mnistNet
 
 # Network configuration
-HOST = '127.0.0.1'  # Bind to all interfaces
+HOST = '77.47.196.66'
 PORT = 7878
 N_clients = 2
 num_rounds = 3 # Must be the same in server and client
@@ -24,11 +25,18 @@ start_event = threading.Event()
 end_event = threading.Event()
 lock = threading.Lock()
 
+client_sockets = 0
+sockets_miss = []
 list_of_state_dicts = []
 model_global = mnistNet()
 
+class ClientDisconnected(Exception):
+    """Raised when the client disconnects gracefully or forcibly"""
+    pass
+
 # Handles communication with a single client for the duration of training
-def client_handler(client_socket, addr, training_data, model_dict, context):
+def client_handler(client_socket, client_number, addr, training_data, model_dict, context):
+    global client_sockets
     try:
         # Secure connection
         client_socket = context.wrap_socket(client_socket, server_side=True)
@@ -41,14 +49,20 @@ def client_handler(client_socket, addr, training_data, model_dict, context):
 
         # Training loop
         for round in range(num_rounds):
-            # Wait until all N_clients are connected
-            start_event.wait()
+            # Checking whether the client has disconnected and waiting until all clients are ready
+            while not start_event.is_set():
+                start_event.wait(timeout = 1)
+                readable, _, _ = select.select([client_socket], [], [], 0)
+                if readable:
+                    raise ClientDiconnected("Client sent signal during wait phase")
 
             # Sending the model to clients
             send_data(client_socket, model_dict, lock)
 
             # Receive weights from clients
             state_dict = receive_data(client_socket)
+            if state_dict == None:
+                raise ClientDisconnected("Client sent empty data block")
             with lock:
                 list_of_state_dicts.append(state_dict)
 
@@ -58,26 +72,28 @@ def client_handler(client_socket, addr, training_data, model_dict, context):
         # End of the training
         print(f"{addr} worked good")
 
-    # Client was disconnected
-    except ConnectionResetError:
-        print(f"{addr} disconnected")
-
     # SSL error
     except ssl.SSLError as e:
-        print(f"SSL Error: {e}")
-        server_socket.close()
-        print("Server shut down due to the error")
+        print(f"SSL Error: {e} on the client {addr}")
         return
+
+    # Client has disconnected
+    except (OSError, ClientDisconnected) as e:
+        print(f"Client {client_number} ({addr}) disconnected: {e}")
+        with lock:
+            sockets_miss.append(client_number)
+            client_sockets -= 1
 
     # Other issues
     except Exception as e:
-        print(f"{addr} Error")
+        print(f"CAPTURED EXCEPTION TYPE: {type(e).__name__}")
+        print(f"{addr} Error: {e}")
 
     finally:
         client_socket.close()
 
 def main():
-    client_sockets = 0
+    global client_sockets
 
     # Creating server socket and allow to reuse port immediately
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -113,8 +129,12 @@ def main():
                   f"Total needed {N_clients}, {N_clients - client_sockets - 1} left")
 
             # Creating and running a new thread
+            if (len(sockets_miss) != 0):
+                partition_number = sockets_miss.pop()
+            else:
+                partition_number = client_sockets
             thread = threading.Thread(target=client_handler,
-                                      args=(client_sock, addr, partitions[client_sockets], model_global.state_dict(), context))
+                                      args=(client_sock, partition_number, addr, partitions[partition_number], model_global.state_dict(), context))
             thread.start()
             client_sockets += 1
 
@@ -125,6 +145,9 @@ def main():
     # Other issues
     except Exception as e:
         print(f"Error accepting connections: {e}")
+        server_socket.close()
+        print("Server shut down due to the error")
+        return
 
     # Training loop
     try:
@@ -141,8 +164,12 @@ def main():
 
             # Wait until all threads complete training
             while True:
-                if len(list_of_state_dicts) == N_clients:
+                if len(list_of_state_dicts) >= client_sockets and client_sockets > 0:
                     break
+                if client_sockets == 0:
+                    print("All clients disconnected")
+                    return
+
                 time.sleep(0.1)
             start_event.clear()
 

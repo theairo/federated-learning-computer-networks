@@ -10,7 +10,7 @@ from network_utils import send_data, receive_data
 from model import mnistNet
 
 # Network configuration
-HOST = '127.0.0.1'
+HOST = '77.47.196.66'
 PORT = 7878
 
 # Synchronisation primitives
@@ -65,6 +65,9 @@ def main():
             # Receiving model
             print("Waiting to receive the model")
             model_dict = receive_data(client_socket)
+            if model_dict == None:
+                raise OSError("The server has disconnected")
+                return
             model.load_state_dict(model_dict)
             print("Model received")
 
