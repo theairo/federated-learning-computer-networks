@@ -5,6 +5,7 @@ import time
 import torch
 import torch.nn as nn
 import ssl
+import traceback
 
 # Import from custom files
 from data_utils import get_partitions
