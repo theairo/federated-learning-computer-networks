@@ -5,9 +5,11 @@ import traceback
 import ssl
 
 # Import from custom files
-from fl_utils import train_local
-from network_utils import send_data, receive_data
+from utils.fl_utils import train_local
+from utils.network_utils import send_data, receive_data
 from model import mnistNet
+
+from config import CERT_PATH
 
 # Network configuration
 HOST = '77.47.196.66'
@@ -26,7 +28,7 @@ def main():
 
     # Security
     context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
-    context.load_verify_locations('cert.pem')
+    context.load_verify_locations(CERT_PATH)
 
     # Creating client socket
     client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)

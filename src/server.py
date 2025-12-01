@@ -9,10 +9,12 @@ import traceback
 import select
 
 # Import from custom files
-from data_utils import get_partitions
-from fl_utils import federated_average,test_global
-from network_utils import receive_data, send_data
+from utils.data_utils import get_partitions
+from utils.fl_utils import federated_average,test_global
+from utils.network_utils import receive_data, send_data
 from model import mnistNet
+
+from config import KEY_PATH, CERT_PATH, OUTPUT_DIR
 
 # Network configuration
 HOST = '77.47.196.66'
@@ -101,7 +103,7 @@ def main():
 
     # Security
     context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
-    context.load_cert_chain(certfile='cert.pem',keyfile='key.pem')
+    context.load_cert_chain(certfile=CERT_PATH,keyfile=KEY_PATH)
 
     # Binding
     try:
@@ -184,6 +186,11 @@ def main():
             print(f"Average Test Loss: {avg_loss:.4f} | Accuracy: {accuracy:.2f}%")
 
             end_event.set()
+        
+        # Save the global model
+        print("Saving the final model...")
+        torch.save(model_global.state_dict(), OUTPUT_DIR / 'server_model.pth')
+        print("Model saved to server_model.pth")
 
     # Other issues
     except Exception as e:
