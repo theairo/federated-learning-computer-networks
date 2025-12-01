@@ -159,7 +159,10 @@ def main():
 
     # Other issues
     except Exception as e:
-        print(f"{e}")
+        print(f"[FATAL ERROR] An unexpected error occurred: {type(e).__name__} - {e}")
+
+        # Detailed error explanation
+        traceback.print_exc()
 
     finally:
         server_socket.close()
