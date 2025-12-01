@@ -1,65 +1,99 @@
+# Import python libraries
 import socket
-import pickle
-import struct
-import time
-from fl_utils import train_local
+import threading
+import traceback
+import ssl
 
+# Import from custom files
+from fl_utils import train_local
+from network_utils import send_data, receive_data
+from model import mnistNet
+
+# Network configuration
 HOST = '77.47.196.66'
 PORT = 7878
+
+# Synchronisation primitives
+lock = threading.Lock()
 
 def main():
     # Training parameters
     num_epochs = 5
     learning_rate = 0.1
-    num_rounds = 10
+
+    # Model
+    model = mnistNet()
+
+    # Security
+    context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+    context.load_verify_locations('cert.pem')
 
     # Creating client socket
     client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    client_socket = context.wrap_socket(client_socket, server_hostname='server_name')
 
     # Connecting to the server
     try:
         client_socket.connect((HOST, PORT))
         print(f"Connected to {HOST}:{PORT}")
+
+    # If server is not running or port is wrong
     except ConnectionRefusedError:
         print("Refused connection")
         return
+
+    # Timeout and other issues
     except Exception as e:
         print(f"Exception {e}")
         return
+
     try:
-        # Receiving training data
-        print("Receiving training data")
-        training_data_length = struct.unpack("Q", client_socket.recv(8))[0]
-        print("Received data length")
-        training_data = pickle.loads(client_socket.recv(training_data_length))
-        print("Received training data")
+        # Receiving number of rounds
+        num_rounds = receive_data(client_socket)
+        print(f"Number of rounds: {num_rounds}")
+
+        training_data = receive_data(client_socket)
+
+        # Checking whether training data is not empty
+        if training_data is None:
+            raise ValueError(f"[FATAL ERROR] Thread {threading.current_thread().name} received no training data")
 
         # Communication loop
         for round in range(num_rounds):
             print(f"Round {round + 1}")
+
             # Receiving model
-            print("Receiving the model")
-            model_length = struct.unpack("Q", client_socket.recv(8))[0]
-            model_bytes = client_socket.recv(model_length)
-            model = pickle.loads(model_bytes)
+            print("Waiting to receive the model")
+            model_dict = receive_data(client_socket)
+            if model_dict == None:
+                raise OSError("The server has disconnected")
+                return
+            model.load_state_dict(model_dict)
             print("Model received")
 
-            print("Training...")
             # Training
+            print("Training...")
             train_local(model, training_data, num_epochs, learning_rate)
             print("Training complete")
 
             # Sending the model
-            serialized_model = pickle.dumps(model)
-            model_length = struct.pack("Q", len(serialized_model))
-            client_socket.sendall(model_length)
-            client_socket.sendall(serialized_model)
-            print("Model send")
+            send_data(client_socket, model.state_dict(), lock)
+            print("Model sent")
 
+        # End of the training
+        print('The client successfully completed the work')
+
+    # Manual client interruption
     except KeyboardInterrupt:
-        print(f"Client shutting down")
+        print(f"Client was manually interrupted")
+
+    # Other issues
     except Exception as e:
-        print(f"Client Error")
+        print(f"[FATAL ERROR] An unexpected error occurred: {type(e).__name__} - {e}")
+
+        # Detailed error explanation
+        traceback.print_exc()
+
     finally:
         client_socket.close()
 

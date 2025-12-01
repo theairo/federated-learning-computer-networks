@@ -4,7 +4,7 @@ from torchvision.datasets import mnist
 
 # Splitting the data before sending to the clients
 # Returns list of torch.data.utils.Subset with data for each client + validation set (the last element in the list)
-def get_partitions_test(N_clients):
+def get_partitions(N_clients):
     # Load mnist
     mnist_data=torchvision.datasets.MNIST('./data',download=True,transform=torchvision.transforms.ToTensor())
 
