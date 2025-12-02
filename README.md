@@ -52,6 +52,14 @@ pip install torch numpy
  python client.py
  ```
 
-## Project Status
+# Demo
+<img width="820" height="556" alt="image" src="https://github.com/user-attachments/assets/ea4e350d-7c82-4c57-8cc0-7eac2d844ad4" />
 
-In-development student project to explore advanced machine learning concepts, distributed systems, and privacy in AI.
+<img width="823" height="328" alt="image" src="https://github.com/user-attachments/assets/76c42837-78a3-4e44-96b9-e4d345f39fdb" />
+
+<img width="817" height="335" alt="image" src="https://github.com/user-attachments/assets/1209b9a8-d839-420a-8090-d27466e83e2b" />
+
+<img width="782" height="316" alt="image" src="https://github.com/user-attachments/assets/f699c8b2-d323-4b13-be3a-898fc5e731fd" />
+
+<img width="467" height="141" alt="image" src="https://github.com/user-attachments/assets/40260def-8229-4b56-bc85-f003bdef5feb" />
+
