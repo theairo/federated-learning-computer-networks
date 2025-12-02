@@ -56,7 +56,7 @@ def client_handler(client_socket, client_number, addr, training_data, model_dict
                 start_event.wait(timeout = 1)
                 readable, _, _ = select.select([client_socket], [], [], 0)
                 if readable:
-                    raise ClientDiconnected("Client sent signal during wait phase")
+                    raise ClientDisconnected("Client sent signal during wait phase")
 
             # Sending the model to clients
             send_data(client_socket, model_dict, lock)
